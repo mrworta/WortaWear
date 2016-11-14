@@ -20,13 +20,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.BatteryManager;
@@ -43,7 +41,7 @@ import java.lang.ref.WeakReference;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 
 public class WortaWear extends CanvasWatchFaceService {
 
@@ -66,7 +64,7 @@ public class WortaWear extends CanvasWatchFaceService {
     private static class EngineHandler extends Handler {
         private final WeakReference<WortaWear.Engine> mWeakReference;
 
-        public EngineHandler(WortaWear.Engine reference) {
+        EngineHandler(WortaWear.Engine reference) {
             mWeakReference = new WeakReference<>(reference);
         }
 
@@ -87,8 +85,6 @@ public class WortaWear extends CanvasWatchFaceService {
         private static final float HOUR_STROKE_WIDTH = 7f;
         private static final float MINUTE_STROKE_WIDTH = 3f;
         private static final float SECOND_TICK_STROKE_WIDTH = 2f;
-
-        private static final float CENTER_GAP_AND_CIRCLE_RADIUS = 145f;
 
         private static final int SHADOW_RADIUS = 6;
         private final Rect mPeekCardBounds = new Rect();
@@ -118,11 +114,7 @@ public class WortaWear extends CanvasWatchFaceService {
         private Paint mSecondPaint;
         private Paint mTickAndCirclePaint;
         private Paint mBackgroundPaint;
-        private Bitmap mBackgroundBitmap;
-        private Bitmap mGrayBackgroundBitmap;
         private boolean mAmbient;
-        private boolean mLowBitAmbient;
-        private boolean mBurnInProtection;
         private String curBattery;
 
         @Override
@@ -130,8 +122,6 @@ public class WortaWear extends CanvasWatchFaceService {
             super.onCreate(holder);
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(WortaWear.this)
-                    .setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
-                    .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
                     .setAcceptsTapEvents(true)
                     .setStatusBarGravity(Gravity.BOTTOM)
                     .build());
@@ -174,9 +164,6 @@ public class WortaWear extends CanvasWatchFaceService {
             mTickAndCirclePaint.setStyle(Paint.Style.STROKE);
             mTickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
 
-            /* Extract colors from background image to improve watchface style. */
-
-
             mCalendar = Calendar.getInstance();
             curBattery = getBatteryText();
         }
@@ -185,13 +172,6 @@ public class WortaWear extends CanvasWatchFaceService {
         public void onDestroy() {
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
             super.onDestroy();
-        }
-
-        @Override
-        public void onPropertiesChanged(Bundle properties) {
-            super.onPropertiesChanged(properties);
-            mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
-            mBurnInProtection = properties.getBoolean(PROPERTY_BURN_IN_PROTECTION, false);
         }
 
         @Override
@@ -219,12 +199,22 @@ public class WortaWear extends CanvasWatchFaceService {
 
         private String getBatteryText()
         {
-            IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-            Intent batteryStatus = getApplicationContext().getApplicationContext().registerReceiver(null, iFilter);
-            int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-            int batteryPct = (int) (level / (float)scale * 100);
-            return String.valueOf(batteryPct) + "%";
+            try {
+                IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+                Intent batteryStatus = getApplicationContext().getApplicationContext().registerReceiver(null, iFilter);
+                if (batteryStatus != null)
+                {
+                    int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                    int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                    int batteryPct = (int) (level / (float) scale * 100);
+                    return String.valueOf(batteryPct) + "%";
+                } else { return "bat err"; }
+
+            } catch (java.lang.NullPointerException e)
+            {
+                return "bat n/a.";
+            }
+
         }
 
 
@@ -293,10 +283,9 @@ public class WortaWear extends CanvasWatchFaceService {
             /*
              * Calculate lengths of different hands based on watch screen size.
              */
-            mSecondHandLength = (float) (mCenterX * 0.99);
-            sMinuteHandLength = (float) (mCenterX * 0.95);
-            sHourHandLength = (float) (mCenterX * 0.8);
-
+            mSecondHandLength = (float) (mCenterX * 0.90);
+            sMinuteHandLength = mSecondHandLength - 20f;
+            sHourHandLength = sMinuteHandLength - 25f;
 
         }
 
@@ -340,26 +329,7 @@ public class WortaWear extends CanvasWatchFaceService {
             long now = System.currentTimeMillis();
             mCalendar.setTimeInMillis(now);
 
-
             canvas.drawColor(Color.BLACK);
-
-
-            // No tiks, but keep the option. ^^
-
-            if (false) {
-                float innerTickRadius = mCenterX - 10;
-                float outerTickRadius = mCenterX;
-                for (int tickIndex = 0; tickIndex < 12; tickIndex++) {
-                    float tickRot = (float) (tickIndex * Math.PI * 2 / 12);
-                    float innerX = (float) Math.sin(tickRot) * innerTickRadius;
-                    float innerY = (float) -Math.cos(tickRot) * innerTickRadius;
-                    float outerX = (float) Math.sin(tickRot) * outerTickRadius;
-                    float outerY = (float) -Math.cos(tickRot) * outerTickRadius;
-                    canvas.drawLine(mCenterX + innerX, mCenterY + innerY,
-                            mCenterX + outerX, mCenterY + outerY, mTickAndCirclePaint);
-                }
-
-            }
 
             /*
              * These calculations reflect the rotation in degrees per unit of time, e.g.,
@@ -382,56 +352,24 @@ public class WortaWear extends CanvasWatchFaceService {
 
             if (!mAmbient) {
                 // Date:
-                SimpleDateFormat format = new SimpleDateFormat("EEEE, d. MMMM yyyy");
-                drawCenter(canvas,mMinutePaint, format.format(mCalendar.getTime()), -(float) (mMinutePaint.getTextSize() * 1.3));
+                drawCenter(canvas,mMinutePaint, DateFormat.getDateInstance(DateFormat.LONG).format(mCalendar.getTime()), -28f);
+
 
                 // Battery:
-                drawCenter(canvas,mMinutePaint, curBattery, (float) (mMinutePaint.getTextSize() * 1.3));
+                drawCenter(canvas,mMinutePaint, curBattery, 20f);
             }
 
             canvas.rotate(hoursRotation, mCenterX, mCenterY);
-          /*  canvas.drawLine(
-                    mCenterX,
-                    mCenterY - CENTER_GAP_AND_CIRCLE_RADIUS,
-                    mCenterX,
-                    mCenterY - sHourHandLength,
-                    mHourPaint);*/
-
-            canvas.drawText(String.valueOf(mCalendar.get(Calendar.HOUR_OF_DAY)),mCenterX,mCenterY - sHourHandLength + 30f, mHourPaint);
+            canvas.drawText(String.valueOf(mCalendar.get(Calendar.HOUR_OF_DAY)),mCenterX,mCenterY - sHourHandLength, mHourPaint);
 
             canvas.rotate(minutesRotation - hoursRotation, mCenterX, mCenterY);
+            canvas.drawText(String.valueOf(mCalendar.get(Calendar.MINUTE)),mCenterX, mCenterY - sMinuteHandLength, mMinutePaint);
 
-        /*    canvas.drawLine(
-                    mCenterX,
-                    mCenterY - CENTER_GAP_AND_CIRCLE_RADIUS,
-                    mCenterX,
-                    mCenterY - sMinuteHandLength,
-                    mMinutePaint); */
-
-            canvas.drawText(String.valueOf(mCalendar.get(Calendar.MINUTE)),mCenterX, mCenterY - sMinuteHandLength + 10f, mMinutePaint);
-
-            /*
-             * Ensure the "seconds" hand is drawn only when we are in interactive mode.
-             * Otherwise, we only update the watch face once a minute.
-             */
             if (!mAmbient) {
                 canvas.rotate(secondsRotation - minutesRotation, mCenterX, mCenterY);
-                /* canvas.drawLine(
-                        mCenterX,
-                        mCenterY - CENTER_GAP_AND_CIRCLE_RADIUS,
-                        mCenterX,
-                        mCenterY - mSecondHandLength,
-                        mSecondPaint); */
-
-                canvas.drawText(String.valueOf(mCalendar.get(Calendar.SECOND)),mCenterX,mCenterY - mSecondHandLength + 20f, mSecondPaint);
+                canvas.drawText(String.valueOf(mCalendar.get(Calendar.SECOND)),mCenterX,mCenterY - mSecondHandLength, mSecondPaint);
 
             }
-            /* canvas.drawCircle(
-                    mCenterX,
-                    mCenterY,
-                    CENTER_GAP_AND_CIRCLE_RADIUS,
-                    mTickAndCirclePaint);
-            */
 
             /* Restore the canvas' original orientation. */
             canvas.restore();
@@ -459,11 +397,7 @@ public class WortaWear extends CanvasWatchFaceService {
             updateTimer();
         }
 
-        @Override
-        public void onPeekCardPositionUpdate(Rect rect) {
-            super.onPeekCardPositionUpdate(rect);
-            mPeekCardBounds.set(rect);
-        }
+
 
         private void registerReceiver() {
             if (mRegisteredTimeZoneReceiver) {
