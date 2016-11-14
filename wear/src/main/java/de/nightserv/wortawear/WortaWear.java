@@ -45,11 +45,6 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.text.SimpleDateFormat;
 
-/**
- * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't
- * shown. On devices with low-bit ambient mode, the hands are drawn without anti-aliasing in ambient
- * mode. The watch face is drawn with less contrast in mute mode.
- */
 public class WortaWear extends CanvasWatchFaceService {
 
     /*
