@@ -354,13 +354,14 @@ public class WortaWear extends CanvasWatchFaceService {
                 // Date:
                 drawCenter(canvas,mMinutePaint, DateFormat.getDateInstance(DateFormat.LONG).format(mCalendar.getTime()), -28f);
 
-
                 // Battery:
                 drawCenter(canvas,mMinutePaint, curBattery, 20f);
             }
 
             canvas.rotate(hoursRotation, mCenterX, mCenterY);
+
             canvas.drawText(String.valueOf(mCalendar.get(Calendar.HOUR_OF_DAY)),mCenterX,mCenterY - sHourHandLength, mHourPaint);
+
 
             canvas.rotate(minutesRotation - hoursRotation, mCenterX, mCenterY);
             canvas.drawText(String.valueOf(mCalendar.get(Calendar.MINUTE)),mCenterX, mCenterY - sMinuteHandLength, mMinutePaint);
