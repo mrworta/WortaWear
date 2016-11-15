@@ -19,6 +19,8 @@ package de.nightserv.wortawear;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+
 import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,6 +30,7 @@ import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Message;
 import android.os.BatteryManager;
+import android.os.Build;
 
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceService;
@@ -35,7 +38,9 @@ import android.support.wearable.watchface.WatchFaceStyle;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 
-
+import android.media.AudioManager;
+import android.media.AudioDeviceInfo;
+import android.media.MediaPlayer;
 
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
@@ -111,8 +116,11 @@ public class WortaWear extends CanvasWatchFaceService {
         private Paint mInfoPaint;
         private Paint mSecondPaint;
         private Paint mBackgroundPaint;
+        private boolean mUseAudio;
         private boolean mAmbient;
         private String curBattery;
+
+        private MediaPlayer mediaPlayer;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -157,6 +165,26 @@ public class WortaWear extends CanvasWatchFaceService {
 
             mCalendar = Calendar.getInstance();
             curBattery = getBatteryText();
+
+            mUseAudio = false;
+
+            PackageManager packageManager = getApplicationContext().getPackageManager();
+            AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (packageManager.hasSystemFeature(PackageManager.FEATURE_AUDIO_OUTPUT)) {
+                    AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+                    for (AudioDeviceInfo device : devices) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                            mUseAudio = true;
+                            mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.leet_time);
+                        }
+                    }
+                }
+            }
+
+
+
         }
 
         @Override
@@ -168,7 +196,18 @@ public class WortaWear extends CanvasWatchFaceService {
         @Override
         public void onTimeTick() {
             super.onTimeTick();
+
             invalidate();
+
+            if (!mMuteMode && mUseAudio) {
+                if (mCalendar.get(Calendar.HOUR_OF_DAY)+0 == 13) {
+                    if (mCalendar.get(Calendar.MINUTE)+0 == 37) {
+                        if (mCalendar.get(Calendar.SECOND)+0 == 0) { mediaPlayer.start(); }
+                    }
+                }
+
+            }
+
         }
 
         @Override
@@ -192,7 +231,7 @@ public class WortaWear extends CanvasWatchFaceService {
         {
             try {
                 IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-                Intent batteryStatus = getApplicationContext().getApplicationContext().registerReceiver(null, iFilter);
+                Intent batteryStatus = getApplicationContext().registerReceiver(null, iFilter);
                 if (batteryStatus != null)
                 {
                     int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
@@ -293,7 +332,6 @@ public class WortaWear extends CanvasWatchFaceService {
                     break;
                 case TAP_TYPE_TAP:
                     break;
-                    //Toast.makeText(getApplicationContext(), R.string.message, Toast.LENGTH_SHORT).show();
 
             }
             invalidate();
@@ -368,6 +406,7 @@ public class WortaWear extends CanvasWatchFaceService {
             if (mAmbient) {
                 canvas.drawRect(mPeekCardBounds, mBackgroundPaint);
             }
+
         }
 
         @Override
