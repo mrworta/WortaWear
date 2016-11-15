@@ -86,7 +86,7 @@ public class WortaWear extends CanvasWatchFaceService {
         private static final float MINUTE_STROKE_WIDTH = 3f;
         private static final float SECOND_TICK_STROKE_WIDTH = 2f;
 
-        private static final int SHADOW_RADIUS = 6;
+        private static final int SHADOW_RADIUS = 12;
         private final Rect mPeekCardBounds = new Rect();
         /* Handler to update the time once a second in interactive mode. */
         private final Handler mUpdateTimeHandler = new EngineHandler(this);
@@ -103,16 +103,13 @@ public class WortaWear extends CanvasWatchFaceService {
         private float mCenterX;
         private float mCenterY;
         private float mSecondHandLength;
-        private float sMinuteHandLength;
-        private float sHourHandLength;
         /* Colors for all hands (hour, minute, seconds, ticks) based on photo loaded. */
-        private int mWatchHandColor;
+        private int mDefaultColor;
         private int mWatchHandHighlightColor;
         private int mWatchHandShadowColor;
-        private Paint mHourPaint;
-        private Paint mMinutePaint;
+        private Paint mTimePaint;
+        private Paint mInfoPaint;
         private Paint mSecondPaint;
-        private Paint mTickAndCirclePaint;
         private Paint mBackgroundPaint;
         private boolean mAmbient;
         private String curBattery;
@@ -130,39 +127,33 @@ public class WortaWear extends CanvasWatchFaceService {
             mBackgroundPaint.setColor(Color.BLACK);
 
             /* Set defaults for colors */
-            mWatchHandColor = Color.WHITE;
+            mDefaultColor = Color.WHITE;
             mWatchHandHighlightColor = Color.RED;
-            mWatchHandShadowColor = Color.BLACK;
+            mWatchHandShadowColor = Color.RED;
 
-            mHourPaint = new Paint();
-            mHourPaint.setTextSize(30f);
-            mHourPaint.setColor(mWatchHandColor);
-            mHourPaint.setStrokeWidth(HOUR_STROKE_WIDTH);
-            mHourPaint.setAntiAlias(true);
-            mHourPaint.setStrokeCap(Paint.Cap.ROUND);
-            mHourPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+            mTimePaint = new Paint();
+            mTimePaint.setTextSize(50f);
+            mTimePaint.setColor(mDefaultColor);
+            mTimePaint.setStrokeWidth(HOUR_STROKE_WIDTH);
+            mTimePaint.setAntiAlias(true);
+            mTimePaint.setStrokeCap(Paint.Cap.ROUND);
+            mTimePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
 
-            mMinutePaint = new Paint();
-            mMinutePaint.setColor(mWatchHandColor);
-            mMinutePaint.setTextSize(20f);
-            mMinutePaint.setStrokeWidth(MINUTE_STROKE_WIDTH);
-            mMinutePaint.setAntiAlias(true);
-            mMinutePaint.setStrokeCap(Paint.Cap.ROUND);
-            mMinutePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+            mInfoPaint = new Paint();
+            mInfoPaint.setColor(mDefaultColor);
+            mInfoPaint.setTextSize(20f);
+            mInfoPaint.setStrokeWidth(MINUTE_STROKE_WIDTH);
+            mInfoPaint.setAntiAlias(true);
+            mInfoPaint.setStrokeCap(Paint.Cap.ROUND);
+            // mInfoPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
 
             mSecondPaint = new Paint();
             mSecondPaint.setColor(mWatchHandHighlightColor);
             mSecondPaint.setStrokeWidth(SECOND_TICK_STROKE_WIDTH);
             mSecondPaint.setAntiAlias(true);
+            mSecondPaint.setTextSize(20f);
             mSecondPaint.setStrokeCap(Paint.Cap.ROUND);
-            mSecondPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
-
-            mTickAndCirclePaint = new Paint();
-            mTickAndCirclePaint.setColor(mWatchHandColor);
-            mTickAndCirclePaint.setStrokeWidth(SECOND_TICK_STROKE_WIDTH);
-            mTickAndCirclePaint.setAntiAlias(true);
-            mTickAndCirclePaint.setStyle(Paint.Style.STROKE);
-            mTickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+            // mSecondPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
 
             mCalendar = Calendar.getInstance();
             curBattery = getBatteryText();
@@ -220,36 +211,35 @@ public class WortaWear extends CanvasWatchFaceService {
 
         private void updateWatchHandStyle() {
             if (mAmbient) {
-                mHourPaint.setColor(Color.WHITE);
-                mMinutePaint.setColor(Color.WHITE);
+                mTimePaint.setColor(Color.WHITE);
+                mInfoPaint.setColor(Color.WHITE);
                 mSecondPaint.setColor(Color.WHITE);
-                mTickAndCirclePaint.setColor(Color.WHITE);
 
-                mHourPaint.setAntiAlias(false);
-                mMinutePaint.setAntiAlias(false);
+                mTimePaint.setAntiAlias(false);
+                mInfoPaint.setAntiAlias(false);
                 mSecondPaint.setAntiAlias(false);
-                mTickAndCirclePaint.setAntiAlias(false);
 
-                mHourPaint.clearShadowLayer();
-                mMinutePaint.clearShadowLayer();
+                mTimePaint.clearShadowLayer();
+                mInfoPaint.clearShadowLayer();
                 mSecondPaint.clearShadowLayer();
-                mTickAndCirclePaint.clearShadowLayer();
+
+                // mTimePaint.setTextSize(30f);
+
 
             } else {
-                mHourPaint.setColor(mWatchHandColor);
-                mMinutePaint.setColor(mWatchHandColor);
+                mTimePaint.setColor(mDefaultColor);
+                mInfoPaint.setColor(mDefaultColor);
                 mSecondPaint.setColor(mWatchHandHighlightColor);
-                mTickAndCirclePaint.setColor(mWatchHandColor);
 
-                mHourPaint.setAntiAlias(true);
-                mMinutePaint.setAntiAlias(true);
+                mTimePaint.setAntiAlias(true);
+                mInfoPaint.setAntiAlias(true);
                 mSecondPaint.setAntiAlias(true);
-                mTickAndCirclePaint.setAntiAlias(true);
 
-                mHourPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
-                mMinutePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+                mTimePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+                mInfoPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
                 mSecondPaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
-                mTickAndCirclePaint.setShadowLayer(SHADOW_RADIUS, 0, 0, mWatchHandShadowColor);
+
+                // mTimePaint.setTextSize(50f);
             }
         }
 
@@ -261,8 +251,8 @@ public class WortaWear extends CanvasWatchFaceService {
             /* Dim display in mute mode. */
             if (mMuteMode != inMuteMode) {
                 mMuteMode = inMuteMode;
-                mHourPaint.setAlpha(inMuteMode ? 100 : 255);
-                mMinutePaint.setAlpha(inMuteMode ? 100 : 255);
+                mTimePaint.setAlpha(inMuteMode ? 100 : 255);
+                mInfoPaint.setAlpha(inMuteMode ? 100 : 255);
                 mSecondPaint.setAlpha(inMuteMode ? 80 : 255);
                 invalidate();
             }
@@ -284,8 +274,6 @@ public class WortaWear extends CanvasWatchFaceService {
              * Calculate lengths of different hands based on watch screen size.
              */
             mSecondHandLength = (float) (mCenterX * 0.90);
-            sMinuteHandLength = mSecondHandLength - 20f;
-            sHourHandLength = sMinuteHandLength - 25f;
 
         }
 
@@ -311,7 +299,7 @@ public class WortaWear extends CanvasWatchFaceService {
             invalidate();
         }
 
-        private void drawCenter(Canvas canvas, Paint paint, String text, float offset) {
+        private Rect drawCenter(Canvas canvas, Paint paint, String text, float offset) {
             Rect r = new Rect();
             canvas.getClipBounds(r);
             int cHeight = r.height();
@@ -321,6 +309,13 @@ public class WortaWear extends CanvasWatchFaceService {
             float x = cWidth / 2f - r.width() / 2f - r.left;
             float y = cHeight / 2f + r.height() / 2f - r.bottom + offset;
             canvas.drawText(text, x, y, paint);
+            return r;
+        }
+
+        private Rect textProperty(Paint paint, String text) {
+            Rect r = new Rect();
+            paint.getTextBounds(text, 0, text.length(), r);
+            return r;
         }
 
 
@@ -331,18 +326,13 @@ public class WortaWear extends CanvasWatchFaceService {
 
             canvas.drawColor(Color.BLACK);
 
-            /*
-             * These calculations reflect the rotation in degrees per unit of time, e.g.,
-             * 360 / 60 = 6 and 360 / 12 = 30.
-             */
             final float seconds =
                     (mCalendar.get(Calendar.SECOND) + mCalendar.get(Calendar.MILLISECOND) / 1000f);
             final float secondsRotation = seconds * 6f;
 
-            final float minutesRotation = mCalendar.get(Calendar.MINUTE) * 6f;
-
-            final float hourHandOffset = mCalendar.get(Calendar.MINUTE) / 2f;
-            final float hoursRotation = (mCalendar.get(Calendar.HOUR) * 30) + hourHandOffset;
+            // final float minutesRotation = mCalendar.get(Calendar.MINUTE) * 6f;
+            // final float hourHandOffset = mCalendar.get(Calendar.MINUTE) / 2f;
+            // final float hoursRotation = (mCalendar.get(Calendar.HOUR) * 30) + hourHandOffset;
 
             /*
              * Save the canvas state before we can begin to rotate it.
@@ -352,24 +342,23 @@ public class WortaWear extends CanvasWatchFaceService {
 
             if (!mAmbient) {
                 // Date:
-                drawCenter(canvas,mMinutePaint, DateFormat.getDateInstance(DateFormat.LONG).format(mCalendar.getTime()), -28f);
+                drawCenter(canvas, mInfoPaint, DateFormat.getDateInstance(DateFormat.LONG).format(mCalendar.getTime()), -28f);
 
                 // Battery:
-                drawCenter(canvas,mMinutePaint, curBattery, 20f);
+                drawCenter(canvas, mInfoPaint, curBattery, 20f);
             }
 
-            canvas.rotate(hoursRotation, mCenterX, mCenterY);
+            String tS =  String.valueOf(mCalendar.get(Calendar.HOUR_OF_DAY));
+            tS = tS + ":";
+            tS = tS + String.format("%02d", mCalendar.get(Calendar.MINUTE));
 
-            canvas.drawText(String.valueOf(mCalendar.get(Calendar.HOUR_OF_DAY)),mCenterX,mCenterY - sHourHandLength, mHourPaint);
-
-
-            canvas.rotate(minutesRotation - hoursRotation, mCenterX, mCenterY);
-            canvas.drawText(String.valueOf(mCalendar.get(Calendar.MINUTE)),mCenterX, mCenterY - sMinuteHandLength, mMinutePaint);
+            drawCenter(canvas, mTimePaint, tS, -80f);
 
             if (!mAmbient) {
-                canvas.rotate(secondsRotation - minutesRotation, mCenterX, mCenterY);
-                canvas.drawText(String.valueOf(mCalendar.get(Calendar.SECOND)),mCenterX,mCenterY - mSecondHandLength, mSecondPaint);
+                String text = String.format("%02d", mCalendar.get(Calendar.SECOND));
 
+                canvas.rotate(secondsRotation, mCenterX, mCenterY);
+                canvas.drawText(text,mCenterX - ( textProperty(mSecondPaint, text).width() / 2f),mCenterY - mSecondHandLength, mSecondPaint);
             }
 
             /* Restore the canvas' original orientation. */
