@@ -199,15 +199,6 @@ public class WortaWear extends CanvasWatchFaceService {
 
             invalidate();
 
-            if (!mMuteMode && mUseAudio) {
-                if (mCalendar.get(Calendar.HOUR_OF_DAY)+0 == 13) {
-                    if (mCalendar.get(Calendar.MINUTE)+0 == 37) {
-                        if (mCalendar.get(Calendar.SECOND)+0 == 0) { mediaPlayer.start(); }
-                    }
-                }
-
-            }
-
         }
 
         @Override
@@ -405,6 +396,15 @@ public class WortaWear extends CanvasWatchFaceService {
             /* Draw rectangle behind peek card in ambient mode to improve readability. */
             if (mAmbient) {
                 canvas.drawRect(mPeekCardBounds, mBackgroundPaint);
+            }
+
+            if (!mMuteMode && mUseAudio) {
+                if (mCalendar.get(Calendar.HOUR_OF_DAY)+0 == 13) {
+                    if (mCalendar.get(Calendar.MINUTE)+0 == 37) {
+                        if (mCalendar.get(Calendar.SECOND)+0 == 0) { mediaPlayer.start(); }
+                    }
+                }
+
             }
 
         }
